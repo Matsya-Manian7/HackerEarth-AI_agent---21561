@@ -3,7 +3,7 @@ import os
 from aixplain.factories import ModelFactory
 from typing import Dict, Any, Optional, Union
 import logging
-from model import BioLLM
+
 
 class BioLLM:
     """
