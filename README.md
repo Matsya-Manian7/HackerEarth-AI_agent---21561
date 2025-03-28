@@ -1,11 +1,81 @@
 # HackerEarth-AI_agent---21561
 
-The telemedicine services in India have been significantly growing, with last year’s consultations recorded at 200 million on the eSanjeevani portal alone.Telemedicine has opened many gateways for the people in rural and untapped areas to access diagnosis and healthcare.
+## BioLLM Medical Assistant
 
-Even though telemedicine has been able to give medical solutions to the patients, it lacks the trade-off between the time to diagnosis and the precision to get the right medication with the available resources in that area.
+This project is a **Streamlit-based** application that utilizes BioLLM for medical analysis. It supports both **text and audio** inputs for biomedical processing.
 
-We tend to balance the trade-off by implementing an AI-agentic Workflow powered by SLM (Small-Language Models) which can run on small devices like mobile phones or in custom hardware with minimal computation.
+## **Setup Instructions**
 
-These agents work together to analyze and provide better insights about the patient’s current and past data.They also refer to the demographics of the rural areas common health issues and the availability of medication in their surroundings,helping the telemedicine doctor to make better well-informed decisions based on the data provided.
+### **1. Clone the Repository**
 
+```bash
+ git clone <your-repo-url>
+ cd <your-repo-name>/main_files
+```
+
+### **2. Create a Virtual Environment (Recommended)**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On macOS/Linux
+venv\Scripts\activate    # On Windows
+```
+
+### **3. Install Dependencies**
+
+```bash
+pip install -r requirements.txt
+```
+
+### **4. Set Up the API Key**
+
+The application requires a **TEAM API Key** to function. Export the key using the following command:
+
+```bash
+export TEAM_API_KEY="your-team-api-key"
+```
+
+If you are using Windows PowerShell:
+
+```powershell
+$env:TEAM_API_KEY="your-team-api-key"
+```
+
+### **5. Run the Application**
+
+Execute the following command in **VS Code Terminal**:
+
+```bash
+streamlit run /yourdirectory/app.py
+```
+
+Replace `/yourdirectory/` with the actual path where **app.py** is located.
+
+### **6. Access the Application**
+
+Once the server starts, open the given **localhost URL** in your web browser to interact with the BioLLM Medical Assistant.
+
+## **File Structure**
+
+```
+LMJ/
+│── submission/
+│    │── main_files/
+│    │    │── app.py               # Main Streamlit app
+│    │    │── biollm_model.py      # BioLLM model handling
+│    │    │── requirements.txt     # Required Python packages
+│    │    │── Execution.ipynb      # Jupyter notebook for testing
+│    │    │── .env                 # Environment variables (not tracked in Git)
+│    │    │── recorder.png         # UI asset
+│    │    │── user-profile.png     # UI asset
+│    │── README.md                 # This file
+```
+
+## **Troubleshooting**
+
+- If `ModuleNotFoundError` occurs, ensure you have activated your virtual environment and installed dependencies.
+- If API issues arise, double-check that `TEAM_API_KEY` is correctly exported.
+- If Streamlit does not launch, confirm that you are running the command from the correct directory.
+
+---
 
