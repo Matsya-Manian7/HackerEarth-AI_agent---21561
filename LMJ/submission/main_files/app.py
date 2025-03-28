@@ -1,126 +1,112 @@
-from flask import Flask, request, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
 import os
 import tempfile
-from model import BioLLM  # Import your BioLLM class
+from dotenv import load_dotenv
+import streamlit as st
+import soundfile as sf  # pip install soundfile
 
-# Initialize Flask app
-current_dir = os.path.abspath(os.path.dirname(__file__))
-app = Flask(__name__, static_folder=current_dir)
-app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
+# Load environment variables from .env file
+load_dotenv()
+TEAM_API_KEY = os.getenv("TEAM_API_KEY")
+if not TEAM_API_KEY:
+    raise Exception("TEAM_API_KEY is not set in the environment.")
 
-# Initialize BioLLM with your API key
-API_KEY = "TEAM_API_KEY"  # Better to use environment variable
-bio_llm = BioLLM(api_key=API_KEY)
+# Import your BioLLM class (ensure model.py is in the same directory)
+from model import BioLLM
 
-@app.route('/')
-def index():
-    """Serve the main HTML page"""
-    try:
-        current_dir = os.path.abspath(os.path.dirname(__file__))
-        print(f"Current directory: {current_dir}")
-        print(f"Looking for index.html in: {current_dir}")
+# Initialize BioLLM instance
+bio_llm = BioLLM(api_key=TEAM_API_KEY)
 
-        # Check if file exists
-        file_path = os.path.join(current_dir, 'index.html')
-        print(f"Full file path: {file_path}")
-        print(f"File exists: {os.path.exists(file_path)}")
-        
-        return send_from_directory(current_dir, 'index.html')
-    except Exception as e:
-        app.logger.error(f"Error serving index.html: {str(e)}")
-        return f"Error: {str(e)}", 404
-        
+# Streamlit app title and description
+st.title("BioLLM Text & Audio Processing")
+st.write("Select a mode (Text or Audio) from the sidebar, provide the required inputs, and click Process.")
 
-@app.route('/api/process-input', methods=['POST'])
-def process_input():
-    """Handle text input from frontend"""
-    data = request.json
-    text = data.get('text', '')
-    source_language = data.get('sourceLanguage', 'en')
+# Sidebar for mode selection
+mode = st.sidebar.radio("Select Input Mode", options=["Text", "Audio"])
+
+if mode == "Text":
+    st.header("Text Mode")
+    text_input = st.text_area("Enter your text", height=150)
+    source_language = st.text_input("Source Language", value="en")
+    rag_query = st.text_input("RAG Query (optional)", value="")
+    rag_category = st.text_input("RAG Category (optional)", value="general")
     
-    try:
-        # Process the text using BioLLM pipeline
-        result = bio_llm.process_pipeline(
-            input_type="text",
-            text=text,
-            source_language=source_language,
-            target_language="en",  # Process in English internally
-            rag_query=text,  # Use the same text for RAG query
-            rag_category="general"  # Default category, modify as needed
-        )
-        
-        # Extract the final response
-        bio_llm_result = result.get("steps", {}).get("bio_llm_processing", {}).get("result", "")
-        
-        # If original language wasn't English, translate response back
-        if source_language.lower() != "en":
-            translated_back = bio_llm.translate_text(
-                {"text": bio_llm_result, "source_language": "en"}, 
-                target_language=source_language
-            )
-            response_text = translated_back.get("translated_text", bio_llm_result)
+    if st.button("Process Text"):
+        if not text_input.strip():
+            st.error("Please provide some text.")
         else:
-            response_text = bio_llm_result
-            
-        return jsonify({"response": response_text})
-    
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+            with st.spinner("Processing text..."):
+                # Process the text input using the BioLLM pipeline
+                result = bio_llm.process_pipeline(
+                    input_type="text",
+                    text=text_input,
+                    source_language=source_language,
+                    target_language="en",
+                    rag_query=rag_query if rag_query else text_input,
+                    rag_category=rag_category if rag_category else "general"
+                )
+                # Get BioLLM result from the pipeline
+                bio_llm_result = result.get("steps", {}).get("bio_llm_processing", {}).get("result", "")
+                # If the source language is not English, translate the result back
+                if source_language.lower() != "en":
+                    translated = bio_llm.translate_text(
+                        {"text": bio_llm_result, "source_language": "en"},
+                        target_language=source_language
+                    )
+                    response_text = translated.get("translated_text", bio_llm_result)
+                else:
+                    response_text = bio_llm_result
+                
+                st.success("Processing complete!")
+                st.subheader("Response")
+                st.text_area("", response_text, height=200)
 
-@app.route('/api/process-audio', methods=['POST'])
-def process_audio():
-    """Handle audio input from frontend"""
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-        
-    audio_file = request.files['audio']
-    source_language = request.form.get('sourceLanguage', 'en')
+elif mode == "Audio":
+    st.header("Audio Mode")
+    st.write("Upload an audio file (preferably in WAV format) to process.")
+    audio_file = st.file_uploader("Upload Audio", type=["wav", "mp3", "ogg"])
+    source_language = st.text_input("Source Language", value="en")
+    rag_query = st.text_input("RAG Query (optional)", value="")
+    rag_category = st.text_input("RAG Category (optional)", value="general")
     
-    try:
-        # Save audio file temporarily
-        filename = secure_filename(audio_file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        audio_file.save(filepath)
-        
-        # Process the audio using BioLLM pipeline
-        result = bio_llm.process_pipeline(
-            input_type="speech",
-            audio_path=filepath,
-            source_language=source_language,
-            target_language="en",  # Process in English internally
-            rag_category="general"  # Default category, modify as needed
-        )
-        
-        # Get the transcribed text
-        input_processing = result.get("steps", {}).get("input_processing", {})
-        transcribed_text = input_processing.get("text", "")
-        
-        # Get the final response
-        bio_llm_result = result.get("steps", {}).get("bio_llm_processing", {}).get("result", "")
-        
-        # If original language wasn't English, translate response back
-        if source_language.lower() != "en":
-            translated_back = bio_llm.translate_text(
-                {"text": bio_llm_result, "source_language": "en"}, 
-                target_language=source_language
-            )
-            response_text = translated_back.get("translated_text", bio_llm_result)
+    if st.button("Process Audio"):
+        if audio_file is None:
+            st.error("Please upload an audio file.")
         else:
-            response_text = bio_llm_result
-        
-        # Clean up temp file
-        os.remove(filepath)
-            
-        return jsonify({
-            "transcribed": transcribed_text,
-            "response": response_text
-        })
-    
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+            with st.spinner("Processing audio..."):
+                # Save the uploaded audio to a temporary .wav file
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                    tmp_filename = tmp.name
+                    tmp.write(audio_file.read())
+                
+                # Process the audio using the BioLLM pipeline in speech mode
+                result = bio_llm.process_pipeline(
+                    input_type="speech",
+                    audio_path=tmp_filename,
+                    source_language=source_language,
+                    target_language="en",
+                    rag_query=rag_query,
+                    rag_category=rag_category
+                )
+                
+                # Extract the transcript and the BioLLM result from the processing steps
+                transcript = result.get("steps", {}).get("input_processing", {}).get("text", "")
+                bio_llm_result = result.get("steps", {}).get("bio_llm_processing", {}).get("result", "")
+                
+                # Remove the temporary file
+                os.remove(tmp_filename)
+                
+                # If the source language is not English, translate the BioLLM result back
+                if source_language.lower() != "en":
+                    translated = bio_llm.translate_text(
+                        {"text": bio_llm_result, "source_language": "en"},
+                        target_language=source_language
+                    )
+                    response_text = translated.get("translated_text", bio_llm_result)
+                else:
+                    response_text = bio_llm_result
+                
+                st.success("Audio processing complete!")
+                st.subheader("Transcript")
+                st.text_area("", transcript, height=150)
+                st.subheader("Response")
+                st.text_area("", response_text, height=200)
