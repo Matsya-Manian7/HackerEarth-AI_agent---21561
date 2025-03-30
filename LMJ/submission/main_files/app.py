@@ -80,13 +80,14 @@ elif mode == "Audio":
                 
                 # Process the audio using the BioLLM pipeline in speech mode
                 result = bio_llm.process_pipeline(
-                    input_type="speech",
+                    input_type="audio",
                     audio_path=tmp_filename,
                     source_language=source_language,
                     target_language="en",
                     rag_query=rag_query,
                     rag_category=rag_category
                 )
+                
                 
                 # Extract the transcript and the BioLLM result from the processing steps
                 transcript = result.get("steps", {}).get("input_processing", {}).get("text", "")
