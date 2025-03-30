@@ -40,21 +40,6 @@ If you are using Windows PowerShell:
 ```powershell
 $env:TEAM_API_KEY="your-team-api-key"
 ```
-
-### **5. Run the Application**
-
-Execute the following command in **VS Code Terminal**:
-
-```bash
-streamlit run /yourdirectory/app.py
-```
-
-Replace `/yourdirectory/` with the actual path where **app.py** is located.
-
-### **6. Access the Application**
-
-Once the server starts, open the given **localhost URL** in your web browser to interact with the BioLLM Medical Assistant.
-
 ## **Model Configuration**
 
 To optimize the cost of running the custom model, scale down the instance when not in use. At the start of your session, follow this process:
@@ -71,6 +56,20 @@ self.bio_llm_id = "67ddc4b1181c58b7238eb33e"
 
 # Uncomment the following line for a faster model
 # self.bio_llm_id = "677c18696eb5634c19191911"
+``` 
+### **5. Run the Application**
+
+Execute the following command in **VS Code Terminal**:
+
+```bash
+streamlit run /yourdirectory/app.py
+```
+
+Replace `/yourdirectory/` with the actual path where **app.py** is located.
+
+### **6. Access the Application**
+
+Once the server starts, open the given **localhost URL** in your web browser to interact with the BioLLM Medical Assistant.
 
 ## **File Structure**
 
