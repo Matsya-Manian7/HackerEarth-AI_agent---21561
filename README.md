@@ -55,6 +55,23 @@ Replace `/yourdirectory/` with the actual path where **app.py** is located.
 
 Once the server starts, open the given **localhost URL** in your web browser to interact with the BioLLM Medical Assistant.
 
+## **Model Configuration**
+
+To optimize the cost of running the custom model, scale down the instance when not in use. At the start of your session, follow this process:
+
+- Run the custom model until you get a response. This may take up to **7 minutes**.
+- Send **3-4 requests**, as the first few may time out during the warming-up phase.
+- Once warmed up, the model will be ready for use in your pipeline.
+
+To improve execution speed, modify the **BioLLM model selection** in your code:
+
+```python
+# Default: SLM Model (lower cost but slower startup)
+self.bio_llm_id = "67ddc4b1181c58b7238eb33e"
+
+# Uncomment the following line for a faster model
+# self.bio_llm_id = "677c18696eb5634c19191911"
+
 ## **File Structure**
 
 ```
